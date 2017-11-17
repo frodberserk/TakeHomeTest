@@ -50,6 +50,19 @@ public class MainActivity extends AppCompatActivity
      */
     private static final int PERMISSION_REQUEST_LOCATION = 1;
 
+    /**
+     * Initial zoom to map.
+     */
+    private static final float INITIAL_ZOOM = 17.0f;
+
+    /**
+     * Used to check if it is first zoom to map, so that we can set initial zoom state to map.
+     */
+    private boolean initialZoomMap = true;
+
+    /**
+     * Views to bind.
+     */
     @BindView(R.id.sw_tracking)
     Switch swTracking;
 
@@ -83,13 +96,17 @@ public class MainActivity extends AppCompatActivity
             LocationUpdatesService.LocalBinder binder = (LocationUpdatesService.LocalBinder) service;
             mLocationUpdatesService = binder.getService();
             bound = true;
-            //Check if location permission is granted.
-            if (isLocationPermissionGranted() && controller.isTrackingOn()) {
-                //Permission is granted, start location service.
-                startLocationUpdates();
-            } else {
-                //Permission is not granted so requesting for it.
-                requestForLocationPermission();
+
+            //If tracking is enabled, check for location permission.
+            if (controller.isTrackingOn()) {
+                //Check if location permission is granted.
+                if (isLocationPermissionGranted()) {
+                    //Permission is granted, start location service.
+                    startLocationUpdates();
+                } else {
+                    //Permission is not granted so requesting for it.
+                    requestForLocationPermission();
+                }
             }
         }
 
@@ -211,14 +228,14 @@ public class MainActivity extends AppCompatActivity
             case PERMISSION_REQUEST_LOCATION: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (ContextCompat.checkSelfPermission(this,
-                            Manifest.permission.ACCESS_FINE_LOCATION)
-                            == PackageManager.PERMISSION_GRANTED) {
-                        // Permission granted. If tracking switch is on, start updates.
-                        if (controller.isTrackingOn()) {
-                            startLocationUpdates();
-                        }
-                    }
+                    // Permission granted. Update tracking UI, and start updates.
+                    swTracking.setChecked(true);
+                    controller.setTrackingStatus(true);
+                    startLocationUpdates();
+                } else {
+                    //If tracking was enabled but permission wasn't granted, turn off tracking.
+                    swTracking.setChecked(false);
+                    controller.setTrackingStatus(false);
                 }
             }
         }
@@ -239,6 +256,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
+     * Called when received a location from controller.
+     *
      * @param location The location object received
      */
     @Override
@@ -264,8 +283,16 @@ public class MainActivity extends AppCompatActivity
                 .title(getString(R.string.my_location)));
 
         //Animate the camera to new location.
+        float zoom;
+        if (initialZoomMap) {
+            zoom = INITIAL_ZOOM;
+            initialZoomMap = false;
+        } else {
+            zoom = mGoogleMap.getCameraPosition().zoom;
+        }
+
         CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(defaultLocation).zoom(18f).build();
+                .target(defaultLocation).zoom(zoom).build();
         mGoogleMap.animateCamera(CameraUpdateFactory
                 .newCameraPosition(cameraPosition));
     }
