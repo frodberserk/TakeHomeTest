@@ -13,6 +13,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.CompoundButton;
 import android.widget.Switch;
 
 import com.demo.takehometest.R;
@@ -83,7 +84,7 @@ public class MainActivity extends AppCompatActivity
             mLocationUpdatesService = binder.getService();
             bound = true;
             //Check if location permission is granted.
-            if (isLocationPermissionGranted()) {
+            if (isLocationPermissionGranted() && controller.isTrackingOn()) {
                 //Permission is granted, start location service.
                 startLocationUpdates();
             } else {
@@ -108,12 +109,42 @@ public class MainActivity extends AppCompatActivity
         mUnbinder = ButterKnife.bind(this);
 
         //Initialize the controller.
-        controller = new MainActivityController();
+        controller = new MainActivityController(this);
+
+        //Update views
+        swTracking.setChecked(controller.isTrackingOn());
 
         // Add google MapFragment to display map
         mMapFragment = new MapFragment();
         getFragmentManager().beginTransaction().add(R.id.container, mMapFragment, "mapFragment").commit();
         mMapFragment.getMapAsync(this);
+
+        addSwitchListener();
+    }
+
+    private void addSwitchListener() {
+        swTracking.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                controller.setTrackingStatus(b);
+                if (b) {
+                    if (isLocationPermissionGranted() && controller.isTrackingOn()) {
+                        startLocationUpdates();
+                    } else {
+                        requestForLocationPermission();
+                    }
+                } else {
+                    stopTracking();
+                }
+            }
+        });
+    }
+
+    /**
+     * Stops the tracking by turning off updates from service.
+     */
+    private void stopTracking() {
+        mLocationUpdatesService.removeLocationUpdates();
     }
 
     @Override
@@ -183,8 +214,10 @@ public class MainActivity extends AppCompatActivity
                     if (ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
-                        // Permission granted.
-                        mLocationUpdatesService.requestLocationUpdates();
+                        // Permission granted. If tracking switch is on, start updates.
+                        if (controller.isTrackingOn()) {
+                            startLocationUpdates();
+                        }
                     }
                 }
             }

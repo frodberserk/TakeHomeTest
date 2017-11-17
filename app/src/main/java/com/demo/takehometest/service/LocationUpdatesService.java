@@ -113,7 +113,7 @@ public class LocationUpdatesService extends Service {
         };
 
         createLocationRequest();
-        getLastLocation();
+//        getLastLocation();
 
         HandlerThread handlerThread = new HandlerThread(TAG);
         handlerThread.start();
@@ -206,6 +206,9 @@ public class LocationUpdatesService extends Service {
                 .setSmallIcon(R.mipmap.ic_launcher).build();
     }
 
+    /**
+     * Retrieve last known location.
+     */
     private void getLastLocation() {
         try {
             mFusedLocationClient.getLastLocation()
