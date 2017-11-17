@@ -2,4 +2,7 @@
     <string name="app_name">TakeHomeTest</string>
     <string name="home">Home</string>
     <string name="my_location">My Location</string>
+    <string name="label_toggle_tracking">Track location</string>
+    <string name="notification_title">TakeHomeTest</string>
+    <string name="notification_message">Service running in background</string>
 </resources>

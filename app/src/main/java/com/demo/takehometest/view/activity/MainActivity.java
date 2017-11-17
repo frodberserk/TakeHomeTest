@@ -1,19 +1,24 @@
 package com.demo.takehometest.view.activity;
 
 import android.Manifest;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Switch;
 
 import com.demo.takehometest.R;
 import com.demo.takehometest.controller.MainActivityController;
 import com.demo.takehometest.listener.LocationUpdateListener;
-import com.demo.takehometest.service.LocationService;
+import com.demo.takehometest.service.LocationUpdatesService;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -22,6 +27,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
@@ -43,6 +49,9 @@ public class MainActivity extends AppCompatActivity
      */
     private static final int PERMISSION_REQUEST_LOCATION = 1;
 
+    @BindView(R.id.sw_tracking)
+    Switch swTracking;
+
     /**
      * Butter knife view binder.
      */
@@ -58,6 +67,37 @@ public class MainActivity extends AppCompatActivity
      * Controller for the current view.
      */
     private MainActivityController controller;
+    // Monitors the state of the connection to the service.
+
+    /**
+     * Object for location service class.
+     */
+    private LocationUpdatesService mLocationUpdatesService;
+    private boolean bound = false;
+
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            LocationUpdatesService.LocalBinder binder = (LocationUpdatesService.LocalBinder) service;
+            mLocationUpdatesService = binder.getService();
+            bound = true;
+            //Check if location permission is granted.
+            if (isLocationPermissionGranted()) {
+                //Permission is granted, start location service.
+                startLocationUpdates();
+            } else {
+                //Permission is not granted so requesting for it.
+                requestForLocationPermission();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mLocationUpdatesService = null;
+            bound = false;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,16 +122,12 @@ public class MainActivity extends AppCompatActivity
         //This also helps in checking if the user has revoked location permission from settings.
         super.onStart();
 
-        //Check if location permission is granted.
-        if (isLocationPermissionGranted()) {
-            //Permission is granted, start location service.
-            startLocationService();
-        } else {
-            //Permission is not granted so requesting for it.
-            requestForLocationPermission();
-        }
         //Register controller to check for location updates.
         controller.registerForLocationUpdates(this);
+
+        //Bind service
+        bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
+                Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -99,6 +135,12 @@ public class MainActivity extends AppCompatActivity
         //Activity is no longer visible.
         super.onStop();
         //Unregister location updates
+        controller.registerForLocationUpdates(null);
+        //If service bound, unbind.
+        if (bound) {
+            unbindService(mServiceConnection);
+            bound = false;
+        }
     }
 
     @Override
@@ -141,8 +183,8 @@ public class MainActivity extends AppCompatActivity
                     if (ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
-                        //If permission is granted, start background service @LocationService.
-                        startLocationService();
+                        // Permission granted.
+                        mLocationUpdatesService.requestLocationUpdates();
                     }
                 }
             }
@@ -150,12 +192,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * This method is used to start the @{@link com.demo.takehometest.service.LocationService}.
+     * Start location updates from @{@link LocationUpdatesService}.
      */
-    private void startLocationService() {
-        startService(new Intent(this, LocationService.class));
+    private void startLocationUpdates() {
+        mLocationUpdatesService.requestLocationUpdates();
     }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -191,7 +232,7 @@ public class MainActivity extends AppCompatActivity
 
         //Animate the camera to new location.
         CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(defaultLocation).zoom(14f).build();
+                .target(defaultLocation).zoom(18f).build();
         mGoogleMap.animateCamera(CameraUpdateFactory
                 .newCameraPosition(cameraPosition));
     }
