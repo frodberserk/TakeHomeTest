@@ -20,6 +20,7 @@ import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -33,6 +34,9 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.demo.takehometest.R;
+import com.demo.takehometest.database.Journey;
+import com.demo.takehometest.database.JourneyDatabase;
+import com.demo.takehometest.database.LocationPoint;
 import com.demo.takehometest.util.PreferencesUtil;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -113,9 +117,19 @@ public class LocationUpdatesService extends Service {
      */
     private final IBinder mBinder = new LocalBinder();
 
+    /**
+     * Database object. We will use it to store journey data into database.
+     */
+    private JourneyDatabase journeyDatabase;
+    private Journey currentJourney;
+
     @Override
     public void onCreate() {
         mPreferencesUtil = new PreferencesUtil(this);
+
+        journeyDatabase = Room.databaseBuilder(getApplicationContext(), JourneyDatabase.class,
+                JourneyDatabase.class.getName())
+                .build();
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -123,6 +137,7 @@ public class LocationUpdatesService extends Service {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
+                addLocationToDatabase(locationResult.getLastLocation());
                 sendLocationEvent(locationResult.getLastLocation());
             }
         };
@@ -190,6 +205,7 @@ public class LocationUpdatesService extends Service {
         try {
             mFusedLocationClient.requestLocationUpdates(mLocationRequest,
                     mLocationCallback, Looper.myLooper());
+            startJourney();
         } catch (SecurityException exception) {
             mPreferencesUtil.setTracking(false);
             Log.e(TAG, "Permission revoked: " + exception);
@@ -204,6 +220,7 @@ public class LocationUpdatesService extends Service {
         try {
             mFusedLocationClient.removeLocationUpdates(mLocationCallback);
             mPreferencesUtil.setTracking(false);
+            endJourney();
             stopSelf();
         } catch (SecurityException exception) {
             mPreferencesUtil.setTracking(true);
@@ -294,5 +311,53 @@ public class LocationUpdatesService extends Service {
             }
         }
         return false;
+    }
+
+    /**
+     * Saves new journey into database.
+     */
+    private void startJourney() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                currentJourney = new Journey();
+                currentJourney.setStartTime(System.currentTimeMillis());
+                currentJourney.setId(journeyDatabase.dao().addJourney(currentJourney));
+            }
+        }).start();
+    }
+
+    /**
+     * Update end time of journey into database.
+     */
+    private void endJourney() {
+        //Checks if journey is not null(unlikely to happen)
+        if (currentJourney != null) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    currentJourney.setEndTime(System.currentTimeMillis());
+                    journeyDatabase.dao().updateJourney(currentJourney);
+                }
+            }).start();
+        }
+    }
+
+    private void addLocationToDatabase(final Location location) {
+        //Check if journey not null (Highly unlikely)
+        if (currentJourney != null) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    LocationPoint locationPoint = new LocationPoint();
+
+                    locationPoint.setJourneyId(currentJourney.getId());
+                    locationPoint.setLatitude(location.getLatitude());
+                    locationPoint.setLongitude(location.getLongitude());
+
+                    journeyDatabase.dao().addLocationPoint(locationPoint);
+                }
+            }).start();
+        }
     }
 }

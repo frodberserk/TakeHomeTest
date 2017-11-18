@@ -170,6 +170,8 @@ public class MainActivity extends AppCompatActivity
     private void stopTracking() {
         mLocationUpdatesService.removeLocationUpdates();
 
+        controller.setTrackingStatus(false);
+
         //Clear the map.
         mGoogleMap.clear();
     }

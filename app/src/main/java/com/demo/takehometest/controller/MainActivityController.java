@@ -89,6 +89,11 @@ public class MainActivityController {
     public void setTrackingStatus(boolean status) {
         model.setTracking(status);
         mPreferencesUtil.setTracking(status);
+
+        //If false, clear current journey.
+        if (!status) {
+            model.clearJourney();
+        }
     }
 
     /**

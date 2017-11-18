@@ -3,10 +3,15 @@ package com.demo.takehometest.listener;
 import android.location.Location;
 
 /**
- * Created by frodberserk on 11/16/2017.
+ * Interface class used to listen to location updates.
  */
 
 public interface LocationUpdateListener {
 
+    /**
+     * Called when location is received.
+     *
+     * @param location The location parameter received.
+     */
     void onLocationReceived(Location location);
 }

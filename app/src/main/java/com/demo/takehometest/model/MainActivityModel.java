@@ -21,6 +21,9 @@ public class MainActivityModel {
      */
     private Location location;
 
+    /**
+     * Stores current journey.
+     */
     private ArrayList<LatLng> locations;
 
     public MainActivityModel() {
@@ -56,6 +59,10 @@ public class MainActivityModel {
         this.location = location;
     }
 
+    /**
+     *
+     * @return
+     */
     public ArrayList<LatLng> getLocations() {
         return locations;
     }
@@ -68,6 +75,9 @@ public class MainActivityModel {
         this.locations.add(new LatLng(location.getLatitude(), location.getLongitude()));
     }
 
+    /**
+     * Clear the ongoing journey.
+     */
     public void clearJourney() {
         locations.clear();
     }
