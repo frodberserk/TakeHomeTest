@@ -6,9 +6,12 @@ import android.location.Location;
 import com.demo.takehometest.listener.LocationUpdateListener;
 import com.demo.takehometest.model.MainActivityModel;
 import com.demo.takehometest.util.PreferencesUtil;
+import com.google.android.gms.maps.model.LatLng;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
+
+import java.util.ArrayList;
 
 /**
  * Controller class for @{@link com.demo.takehometest.view.activity.MainActivity}.
@@ -45,9 +48,14 @@ public class MainActivityController {
     @Subscribe
     public void onEvent(Location location) {
         model.setLocation(location);
+        addToJourney(location);
         if (mLocationUpdateListener != null) {
             mLocationUpdateListener.onLocationReceived(location);
         }
+    }
+
+    private void addToJourney(Location location) {
+        model.addJourney(location);
     }
 
     /**
@@ -90,5 +98,14 @@ public class MainActivityController {
      */
     public boolean isTrackingOn() {
         return model.isTracking();
+    }
+
+    /**
+     * Return list of coordinates user travelled.
+     *
+     * @return ArrayList of location.
+     */
+    public ArrayList<LatLng> getJourney() {
+        return model.getLocations();
     }
 }

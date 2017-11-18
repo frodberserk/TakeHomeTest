@@ -51,17 +51,24 @@ import org.greenrobot.eventbus.EventBus;
  */
 public class LocationUpdatesService extends Service {
 
+    /**
+     * Simple tag for logs.
+     */
     private static final String TAG = LocationUpdatesService.class.getSimpleName();
 
-    private final IBinder mBinder = new LocalBinder();
+    /**
+     * Smallest distance in metres to which we will receive location updates.
+     */
+    private static final float SMALLEST_DISPLACEMENT = 10;
+
 
     /**
-     * Interval for location updates.
+     * Interval in millis for location updates.
      */
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
 
     /**
-     * Fastest interval for location updates.
+     * Fastest interval in millis for location updates.
      */
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
@@ -96,7 +103,15 @@ public class LocationUpdatesService extends Service {
      */
     private Location mLocation;
 
+    /**
+     * Contains tracking on/off info.
+     */
     private PreferencesUtil mPreferencesUtil;
+
+    /**
+     * Local binder object for this service.
+     */
+    private final IBinder mBinder = new LocalBinder();
 
     @Override
     public void onCreate() {
@@ -249,6 +264,7 @@ public class LocationUpdatesService extends Service {
         mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
         mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setSmallestDisplacement(SMALLEST_DISPLACEMENT);
     }
 
     /**

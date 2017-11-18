@@ -2,6 +2,10 @@ package com.demo.takehometest.model;
 
 import android.location.Location;
 
+import com.google.android.gms.maps.model.LatLng;
+
+import java.util.ArrayList;
+
 /**
  * Model class for main activity.
  */
@@ -17,9 +21,12 @@ public class MainActivityModel {
      */
     private Location location;
 
+    private ArrayList<LatLng> locations;
+
     public MainActivityModel() {
         tracking = false;
         location = null;
+        locations = new ArrayList<>();
     }
 
     /**
@@ -49,4 +56,19 @@ public class MainActivityModel {
         this.location = location;
     }
 
+    public ArrayList<LatLng> getLocations() {
+        return locations;
+    }
+
+    public void setLocations(ArrayList<LatLng> locations) {
+        this.locations = locations;
+    }
+
+    public void addJourney(Location location) {
+        this.locations.add(new LatLng(location.getLatitude(), location.getLongitude()));
+    }
+
+    public void clearJourney() {
+        locations.clear();
+    }
 }

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -26,7 +27,11 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+
+import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -76,6 +81,7 @@ public class MainActivity extends AppCompatActivity
      */
     private GoogleMap mGoogleMap;
     private MapFragment mMapFragment;
+    private Marker currentMarker;
 
     /**
      * Controller for the current view.
@@ -99,6 +105,7 @@ public class MainActivity extends AppCompatActivity
 
             //If tracking is enabled, check for location permission.
             if (controller.isTrackingOn()) {
+                drawJourney(controller.getJourney());
                 //Check if location permission is granted.
                 if (isLocationPermissionGranted()) {
                     //Permission is granted, start location service.
@@ -162,6 +169,9 @@ public class MainActivity extends AppCompatActivity
      */
     private void stopTracking() {
         mLocationUpdatesService.removeLocationUpdates();
+
+        //Clear the map.
+        mGoogleMap.clear();
     }
 
     @Override
@@ -274,20 +284,26 @@ public class MainActivity extends AppCompatActivity
      */
     private void moveToLocation(Location location) {
         //Clear old marker.
-        mGoogleMap.clear();
+        if (currentMarker != null) {
+            currentMarker.remove();
+        }
+
+        drawJourney(controller.getJourney());
 
         //Add new marker on current location.
         LatLng defaultLocation = new LatLng(location.getLatitude(), location.getLongitude());
-        mGoogleMap.addMarker(new MarkerOptions()
+        currentMarker = mGoogleMap.addMarker(new MarkerOptions()
                 .position(defaultLocation)
                 .title(getString(R.string.my_location)));
 
         //Animate the camera to new location.
         float zoom;
         if (initialZoomMap) {
+            //First zoom, so set default zoom.
             zoom = INITIAL_ZOOM;
             initialZoomMap = false;
         } else {
+            //Not first zoom, so use the current zoom of map to avoid UI flickering of map.
             zoom = mGoogleMap.getCameraPosition().zoom;
         }
 
@@ -295,5 +311,24 @@ public class MainActivity extends AppCompatActivity
                 .target(defaultLocation).zoom(zoom).build();
         mGoogleMap.animateCamera(CameraUpdateFactory
                 .newCameraPosition(cameraPosition));
+//        addPathToMap();
+    }
+
+    /**
+     * Draw's the journey so far.
+     */
+    private void drawJourney(ArrayList<LatLng> journey) {
+        //Clear map
+        mGoogleMap.clear();
+
+        //Describe polyline options, specifying points to connect.
+        PolylineOptions options = new PolylineOptions().width(5).color(Color.BLUE).geodesic(true);
+        for (int i = 0; i < journey.size(); i++) {
+            LatLng point = journey.get(i);
+            options.add(point);
+        }
+
+        //Draw the path.
+        mGoogleMap.addPolyline(options);
     }
 }
