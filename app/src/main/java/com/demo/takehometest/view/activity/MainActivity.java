@@ -1,16 +1,9 @@
 package com.demo.takehometest.view.activity;
 
-import android.Manifest;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -21,8 +14,8 @@ import android.widget.Switch;
 
 import com.demo.takehometest.R;
 import com.demo.takehometest.controller.MainActivityController;
-import com.demo.takehometest.listener.UpdateViewCallback;
-import com.demo.takehometest.service.LocationUpdatesService;
+import com.demo.takehometest.listener.MapUpdateViewCallback;
+import com.demo.takehometest.util.AppConstants;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -45,7 +38,7 @@ import butterknife.Unbinder;
  * This activity is used to display map and user's location on it.
  */
 public class MainActivity extends AppCompatActivity
-        implements OnMapReadyCallback, UpdateViewCallback {
+        implements OnMapReadyCallback, MapUpdateViewCallback {
 
     /**
      * Simple tag for map logs.
@@ -53,9 +46,14 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = "Google Map";
 
     /**
-     * Permission request codes.
+     * Width of path drawn on map.
      */
-    private static final int PERMISSION_REQUEST_LOCATION = 1;
+    private static final int POLYLINE_WIDTH = 5;
+
+    /**
+     * Color of path drawn on map.
+     */
+    private static final int POLYLINE_COLOR = Color.BLUE;
 
     /**
      * Initial zoom to map.
@@ -82,52 +80,11 @@ public class MainActivity extends AppCompatActivity
      * Google map elements.
      */
     private GoogleMap mGoogleMap;
-    private MapFragment mMapFragment;
 
     /**
      * Controller for the current view.
      */
     private MainActivityController controller;
-    // Monitors the state of the connection to the service.
-
-    /**
-     * Object for location service class.
-     */
-    private LocationUpdatesService mLocationUpdatesService;
-    private boolean bound = false;
-
-    private final ServiceConnection mServiceConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            LocationUpdatesService.LocalBinder binder = (LocationUpdatesService.LocalBinder) service;
-            mLocationUpdatesService = binder.getService();
-            bound = true;
-
-            //If tracking is enabled, check for location permission.
-            if (controller.isTrackingOn()) {
-                drawJourney(controller.getJourney());
-
-                if (mLocationUpdatesService.isUpdateOn()) {
-                    return;
-                }
-                //Check if location permission is granted.
-                if (isLocationPermissionGranted()) {
-                    //Permission is granted, start location service.
-                    startLocationUpdates();
-                } else {
-                    //Permission is not granted so requesting for it.
-                    requestForLocationPermission();
-                }
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            mLocationUpdatesService = null;
-            bound = false;
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,7 +101,7 @@ public class MainActivity extends AppCompatActivity
         swTracking.setChecked(controller.isTrackingOn());
 
         // Add google MapFragment to display map
-        mMapFragment = new MapFragment();
+        MapFragment mMapFragment = new MapFragment();
         getFragmentManager().beginTransaction().add(R.id.container, mMapFragment, "mapFragment").commit();
         mMapFragment.getMapAsync(this);
 
@@ -173,13 +130,8 @@ public class MainActivity extends AppCompatActivity
         swTracking.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                controller.setTrackingStatus(b);
                 if (b) {
-                    if (isLocationPermissionGranted() && controller.isTrackingOn()) {
-                        startLocationUpdates();
-                    } else {
-                        requestForLocationPermission();
-                    }
+                    controller.requestForTracking();
                 } else {
                     stopTracking();
                 }
@@ -191,8 +143,6 @@ public class MainActivity extends AppCompatActivity
      * Stops the tracking by turning off updates from service.
      */
     private void stopTracking() {
-        mLocationUpdatesService.removeLocationUpdates();
-
         controller.setTrackingStatus(false);
 
         //Clear the map.
@@ -209,8 +159,7 @@ public class MainActivity extends AppCompatActivity
         controller.registerForUpdateUI(this);
 
         //Bind service
-        bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
-                Context.BIND_AUTO_CREATE);
+        controller.bindToLocationService();
     }
 
     @Override
@@ -220,10 +169,7 @@ public class MainActivity extends AppCompatActivity
         //Unregister map UI updates
         controller.unregisterForUpdateUI();
         //If service bound, unbind.
-        if (bound) {
-            unbindService(mServiceConnection);
-            bound = false;
-        }
+        controller.unbindToLocationService();
     }
 
     @Override
@@ -233,26 +179,6 @@ public class MainActivity extends AppCompatActivity
         mUnbinder.unbind();
     }
 
-    /**
-     * Check if location permission is granted.
-     *
-     * @return True if granted, false otherwise.
-     */
-    private boolean isLocationPermissionGranted() {
-        return ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED;
-    }
-
-    /**
-     * This method is called to request for location permission.
-     */
-    private void requestForLocationPermission() {
-        ActivityCompat.requestPermissions(this,
-                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                PERMISSION_REQUEST_LOCATION);
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[],
                                            int[] grantResults) {
@@ -260,13 +186,12 @@ public class MainActivity extends AppCompatActivity
 
         //Check for the resultCode to see what permission was requested.
         switch (requestCode) {
-            case PERMISSION_REQUEST_LOCATION: {
+            case AppConstants.REQUEST_CODE_LOCATION_PERMISSION: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // Permission granted. Update tracking UI, and start updates.
                     swTracking.setChecked(true);
-                    controller.setTrackingStatus(true);
-                    startLocationUpdates();
+                    controller.requestLocationUpdates();
                 } else {
                     //If tracking was enabled but permission wasn't granted, turn off tracking.
                     swTracking.setChecked(false);
@@ -274,13 +199,6 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         }
-    }
-
-    /**
-     * Start location updates from @{@link LocationUpdatesService}.
-     */
-    private void startLocationUpdates() {
-        mLocationUpdatesService.requestLocationUpdates();
     }
 
     @Override
@@ -291,12 +209,14 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * Called when received a location update. Update the journey here.
+     * Called when need to update view.
+     *
+     * @param data List of journey points.
      */
     @Override
-    public void updateView() {
+    public void updateView(ArrayList<LatLng> data) {
         //Display user's current location on map.
-        drawJourney(controller.getJourney());
+        drawJourney(data);
     }
 
     /**
@@ -309,8 +229,11 @@ public class MainActivity extends AppCompatActivity
         //Return if no data.
         if (journey.size() == 0) return;
 
-        //Describe polyline options, specifying points to connect.
-        PolylineOptions options = new PolylineOptions().width(5).color(Color.BLUE).geodesic(true);
+        //Describe PolylineOptions, specifying points to connect.
+        PolylineOptions options = new PolylineOptions().width(POLYLINE_WIDTH).color(POLYLINE_COLOR)
+                .geodesic(true);
+
+        //Add all points to PolylineOptions
         for (int i = 0; i < journey.size(); i++) {
             LatLng point = journey.get(i);
             options.add(point);
@@ -318,7 +241,6 @@ public class MainActivity extends AppCompatActivity
 
         //Draw the path.
         mGoogleMap.addPolyline(options);
-
 
         //Update markers
         LatLng currentMarker = journey.get(journey.size() - 1);
@@ -337,6 +259,7 @@ public class MainActivity extends AppCompatActivity
             zoom = mGoogleMap.getCameraPosition().zoom;
         }
 
+        //Animate camera to current location
         CameraPosition cameraPosition = new CameraPosition.Builder()
                 .target(currentMarker).zoom(zoom).build();
         mGoogleMap.animateCamera(CameraUpdateFactory

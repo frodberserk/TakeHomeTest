@@ -24,6 +24,7 @@ import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -34,9 +35,10 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.demo.takehometest.R;
-import com.demo.takehometest.database.Journey;
 import com.demo.takehometest.database.JourneyDatabase;
-import com.demo.takehometest.database.LocationPoint;
+import com.demo.takehometest.listener.RequestJourneyCallback;
+import com.demo.takehometest.model.Journey;
+import com.demo.takehometest.model.LocationPoint;
 import com.demo.takehometest.util.PreferencesUtil;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -47,6 +49,8 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 import org.greenrobot.eventbus.EventBus;
+
+import java.util.List;
 
 /**
  * Service class used to track user's location periodically.
@@ -324,6 +328,7 @@ public class LocationUpdatesService extends Service {
      * Saves new journey into database.
      */
     private void startJourney() {
+        //Background thread for Room database
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -340,6 +345,7 @@ public class LocationUpdatesService extends Service {
     private void endJourney() {
         //Checks if journey is not null(unlikely to happen)
         if (currentJourney != null) {
+            //Background thread for Room database
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -352,8 +358,9 @@ public class LocationUpdatesService extends Service {
     }
 
     private void addLocationToDatabase(final Location location) {
-        //Check if journey not null (Highly unlikely)
+        //Check if journey not null
         if (currentJourney != null) {
+            //Background thread for Room database
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -364,11 +371,6 @@ public class LocationUpdatesService extends Service {
                     locationPoint.setLongitude(location.getLongitude());
 
                     journeyDatabase.dao().addLocationPoint(locationPoint);
-
-                    //Update the end time of journey by last location time in database in case
-                    //the app stops unexpectedly.
-                    currentJourney.setEndTime(System.currentTimeMillis());
-                    journeyDatabase.dao().updateJourney(currentJourney);
                 }
             }).start();
         }
@@ -381,5 +383,34 @@ public class LocationUpdatesService extends Service {
      */
     public boolean isUpdateOn() {
         return updatesOn;
+    }
+
+    /**
+     * Query current journey locations from database and send back into callback.
+     *
+     * @param requestJourneyCallback Callback to send data back.
+     */
+    public void requestCurrentJourneyData(final RequestJourneyCallback requestJourneyCallback) {
+        //Background thread for Room database, then return control back.
+        new QueryJourneyData(requestJourneyCallback).execute();
+    }
+
+    /**
+     * AsyncTask to query data on background thread.
+     */
+    class QueryJourneyData extends AsyncTask<Void, Void, List<LocationPoint>> {
+        RequestJourneyCallback callback;
+
+        QueryJourneyData(RequestJourneyCallback callback) {
+            this.callback = callback;
+        }
+
+        protected List<LocationPoint> doInBackground(Void... v) {
+            return journeyDatabase.dao().loadPointsOfJourney(currentJourney.getId());
+        }
+
+        protected void onPostExecute(List<LocationPoint> result) {
+            callback.onRequestComplete(result);
+        }
     }
 }

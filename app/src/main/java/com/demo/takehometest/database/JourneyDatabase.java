@@ -3,6 +3,9 @@ package com.demo.takehometest.database;
 import android.arch.persistence.room.Database;
 import android.arch.persistence.room.RoomDatabase;
 
+import com.demo.takehometest.model.Journey;
+import com.demo.takehometest.model.LocationPoint;
+
 /**
  * JourneyDatabase class for Room.
  */

@@ -1,4 +1,4 @@
-package com.demo.takehometest.database;
+package com.demo.takehometest.model;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
@@ -15,6 +15,7 @@ public class Journey {
     private long id;
 
     private long startTime;
+
     private long endTime;
 
     public long getId() {

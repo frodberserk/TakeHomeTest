@@ -2,15 +2,24 @@ package com.demo.takehometest.controller;
 
 import android.arch.persistence.room.Room;
 import android.content.Context;
+import android.os.AsyncTask;
 
 import com.demo.takehometest.database.JourneyDatabase;
-import com.demo.takehometest.listener.FetchJourneyCallback;
+import com.demo.takehometest.listener.JourneyQueryCallback;
+import com.demo.takehometest.model.Journey;
+
+import java.util.List;
 
 /**
  * Controller class for @{@link com.demo.takehometest.view.activity.JourneyListActivity}.
  */
 
 public class JourneyListController {
+
+    /**
+     * Context of activity.
+     */
+    private Context context;
 
     /**
      * Database object for querying data.
@@ -24,13 +33,23 @@ public class JourneyListController {
                 .build();
     }
 
-    public void fetchJourneyData(final FetchJourneyCallback callback) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                callback.onQuerySuccessful(database.dao().loadAllJourneys());
-            }
-        }).start();
+    public void fetchJourneyData(final JourneyQueryCallback callback) {
+        new QueryJourneyData(callback).execute();
     }
 
+    class QueryJourneyData extends AsyncTask<Void, Void, List<Journey>> {
+        JourneyQueryCallback callback;
+
+        QueryJourneyData(JourneyQueryCallback callback) {
+            this.callback = callback;
+        }
+
+        protected List<Journey> doInBackground(Void... v) {
+            return database.dao().loadAllJourneys();
+        }
+
+        protected void onPostExecute(List<Journey> result) {
+            callback.onQuerySuccessful(result);
+        }
+    }
 }

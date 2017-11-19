@@ -1,4 +1,4 @@
-package com.demo.takehometest.database;
+package com.demo.takehometest.model;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;

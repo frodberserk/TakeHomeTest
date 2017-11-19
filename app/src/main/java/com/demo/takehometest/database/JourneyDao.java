@@ -6,6 +6,9 @@ import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Update;
 
+import com.demo.takehometest.model.Journey;
+import com.demo.takehometest.model.LocationPoint;
+
 import java.util.List;
 
 /**
@@ -31,7 +34,7 @@ public interface JourneyDao {
      * @return List containing all location points.
      */
     @Query("SELECT * from LocationPoint where journeyId = :journeyId")
-    public List<LocationPoint> loadPointsOfJourney(int journeyId);
+    public List<LocationPoint> loadPointsOfJourney(long journeyId);
 
     /**
      * Insert a journey into database.

@@ -8,8 +8,8 @@ import android.support.v7.widget.RecyclerView;
 
 import com.demo.takehometest.R;
 import com.demo.takehometest.controller.JourneyListController;
-import com.demo.takehometest.database.Journey;
-import com.demo.takehometest.listener.FetchJourneyCallback;
+import com.demo.takehometest.model.Journey;
+import com.demo.takehometest.listener.JourneyQueryCallback;
 import com.demo.takehometest.view.adapter.JourneyAdapter;
 
 import java.util.List;
@@ -67,7 +67,7 @@ public class JourneyListActivity extends AppCompatActivity {
      * Display the journey data provided by controller.
      */
     private void displayData() {
-        mController.fetchJourneyData(new FetchJourneyCallback() {
+        mController.fetchJourneyData(new JourneyQueryCallback() {
             @Override
             public void onQuerySuccessful(List<Journey> journeys) {
                 mJourneyAdapter.setData(journeys);

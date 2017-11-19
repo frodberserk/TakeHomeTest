@@ -7,9 +7,11 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.demo.takehometest.R;
-import com.demo.takehometest.database.Journey;
+import com.demo.takehometest.model.Journey;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import butterknife.BindView;
@@ -21,7 +23,15 @@ import butterknife.ButterKnife;
 
 public class JourneyAdapter extends RecyclerView.Adapter<JourneyAdapter.JourneyViewHolder> {
 
+    /**
+     * List of journeys.
+     */
     private ArrayList<Journey> mJourneyList = new ArrayList<>();
+
+    /**
+     * Format to display time in table.
+     */
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, hh:mm aa");
 
     @Override
     public JourneyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -36,8 +46,9 @@ public class JourneyAdapter extends RecyclerView.Adapter<JourneyAdapter.JourneyV
         //Set data on view for a particular row @position.
         Journey journey = mJourneyList.get(position);
         holder.tvId.setText(String.valueOf(journey.getId()));
-        holder.tvStartTime.setText(String.valueOf(journey.getStartTime()));
-        holder.tvEndTime.setText(String.valueOf(journey.getEndTime()));
+
+        holder.tvStartTime.setText(niceTime(journey.getStartTime()));
+        holder.tvEndTime.setText(niceTime(journey.getEndTime()));
     }
 
     @Override
@@ -49,6 +60,21 @@ public class JourneyAdapter extends RecyclerView.Adapter<JourneyAdapter.JourneyV
         mJourneyList.clear();
         mJourneyList.addAll(data);
         notifyDataSetChanged();
+    }
+
+    /**
+     * Returns readable time as String.
+     *
+     * @param millis Time in millis to convert.
+     * @return Converted time in string.
+     */
+    private String niceTime(long millis) {
+        if (millis == 0) {
+            //Unknown time
+            return "-";
+        } else {
+            return simpleDateFormat.format(new Date(millis));
+        }
     }
 
     /**
