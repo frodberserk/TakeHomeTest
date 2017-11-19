@@ -28,6 +28,7 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile "com.android.support:appcompat-v7:$SUPPORT_LIBRARY_VERSION"
+    compile "com.android.support:recyclerview-v7:$SUPPORT_LIBRARY_VERSION"
     compile "com.google.android.gms:play-services-maps:$PLAY_SERVICES_VERSION"
     compile "com.google.android.gms:play-services-location:$PLAY_SERVICES_VERSION"
     compile 'com.jakewharton:butterknife:8.8.1'

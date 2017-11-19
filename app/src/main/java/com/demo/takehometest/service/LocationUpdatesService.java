@@ -123,16 +123,21 @@ public class LocationUpdatesService extends Service {
     private JourneyDatabase journeyDatabase;
     private Journey currentJourney;
 
+    private boolean updatesOn = false;
+
     @Override
     public void onCreate() {
         mPreferencesUtil = new PreferencesUtil(this);
 
+        //Build the database object.
         journeyDatabase = Room.databaseBuilder(getApplicationContext(), JourneyDatabase.class,
-                JourneyDatabase.class.getName())
+                JourneyDatabase.DATABASE_NAME)
                 .build();
 
+        //Initialize location client.
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        //Write Location updates callback.
         mLocationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
@@ -141,6 +146,7 @@ public class LocationUpdatesService extends Service {
                 sendLocationEvent(locationResult.getLastLocation());
             }
         };
+        mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         createLocationRequest();
 //        getLastLocation();
@@ -148,7 +154,6 @@ public class LocationUpdatesService extends Service {
         HandlerThread handlerThread = new HandlerThread(TAG);
         handlerThread.start();
         mServiceHandler = new Handler(handlerThread.getLooper());
-        mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
     }
 
     @Override
@@ -206,6 +211,7 @@ public class LocationUpdatesService extends Service {
             mFusedLocationClient.requestLocationUpdates(mLocationRequest,
                     mLocationCallback, Looper.myLooper());
             startJourney();
+            updatesOn = true;
         } catch (SecurityException exception) {
             mPreferencesUtil.setTracking(false);
             Log.e(TAG, "Permission revoked: " + exception);
@@ -221,6 +227,7 @@ public class LocationUpdatesService extends Service {
             mFusedLocationClient.removeLocationUpdates(mLocationCallback);
             mPreferencesUtil.setTracking(false);
             endJourney();
+            updatesOn = false;
             stopSelf();
         } catch (SecurityException exception) {
             mPreferencesUtil.setTracking(true);
@@ -338,6 +345,7 @@ public class LocationUpdatesService extends Service {
                 public void run() {
                     currentJourney.setEndTime(System.currentTimeMillis());
                     journeyDatabase.dao().updateJourney(currentJourney);
+                    currentJourney = null;
                 }
             }).start();
         }
@@ -356,8 +364,22 @@ public class LocationUpdatesService extends Service {
                     locationPoint.setLongitude(location.getLongitude());
 
                     journeyDatabase.dao().addLocationPoint(locationPoint);
+
+                    //Update the end time of journey by last location time in database in case
+                    //the app stops unexpectedly.
+                    currentJourney.setEndTime(System.currentTimeMillis());
+                    journeyDatabase.dao().updateJourney(currentJourney);
                 }
             }).start();
         }
+    }
+
+    /**
+     * Checks if location updates are on.
+     *
+     * @return True if on, false otherwise.
+     */
+    public boolean isUpdateOn() {
+        return updatesOn;
     }
 }

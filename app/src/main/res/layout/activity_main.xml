@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!--Switch for toggle tracking-->
     <Switch
         android:id="@+id/sw_tracking"
         android:layout_width="match_parent"
@@ -11,6 +12,7 @@
         android:padding="16dp"
         android:text="@string/label_toggle_tracking" />
 
+    <!--Container for map fragment-->
     <FrameLayout
         android:id="@+id/container"
         android:layout_width="match_parent"

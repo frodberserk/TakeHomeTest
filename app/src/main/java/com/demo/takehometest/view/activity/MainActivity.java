@@ -7,27 +7,29 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 
 import com.demo.takehometest.R;
 import com.demo.takehometest.controller.MainActivityController;
-import com.demo.takehometest.listener.LocationUpdateListener;
+import com.demo.takehometest.listener.UpdateViewCallback;
 import com.demo.takehometest.service.LocationUpdatesService;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -43,7 +45,7 @@ import butterknife.Unbinder;
  * This activity is used to display map and user's location on it.
  */
 public class MainActivity extends AppCompatActivity
-        implements OnMapReadyCallback, LocationUpdateListener {
+        implements OnMapReadyCallback, UpdateViewCallback {
 
     /**
      * Simple tag for map logs.
@@ -81,7 +83,6 @@ public class MainActivity extends AppCompatActivity
      */
     private GoogleMap mGoogleMap;
     private MapFragment mMapFragment;
-    private Marker currentMarker;
 
     /**
      * Controller for the current view.
@@ -106,6 +107,10 @@ public class MainActivity extends AppCompatActivity
             //If tracking is enabled, check for location permission.
             if (controller.isTrackingOn()) {
                 drawJourney(controller.getJourney());
+
+                if (mLocationUpdatesService.isUpdateOn()) {
+                    return;
+                }
                 //Check if location permission is granted.
                 if (isLocationPermissionGranted()) {
                     //Permission is granted, start location service.
@@ -146,6 +151,24 @@ public class MainActivity extends AppCompatActivity
         addSwitchListener();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_show_journeys:
+                openJourneyListActivity();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
     private void addSwitchListener() {
         swTracking.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -182,8 +205,8 @@ public class MainActivity extends AppCompatActivity
         //This also helps in checking if the user has revoked location permission from settings.
         super.onStart();
 
-        //Register controller to check for location updates.
-        controller.registerForLocationUpdates(this);
+        //Register controller to check for map UI updates.
+        controller.registerForUpdateUI(this);
 
         //Bind service
         bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
@@ -194,8 +217,8 @@ public class MainActivity extends AppCompatActivity
     protected void onStop() {
         //Activity is no longer visible.
         super.onStop();
-        //Unregister location updates
-        controller.registerForLocationUpdates(null);
+        //Unregister map UI updates
+        controller.unregisterForUpdateUI();
         //If service bound, unbind.
         if (bound) {
             unbindService(mServiceConnection);
@@ -268,34 +291,39 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * Called when received a location from controller.
-     *
-     * @param location The location object received
+     * Called when received a location update. Update the journey here.
      */
     @Override
-    public void onLocationReceived(Location location) {
+    public void updateView() {
         //Display user's current location on map.
-        moveToLocation(location);
+        drawJourney(controller.getJourney());
     }
 
-
     /**
-     * Move to the location in the map.
-     *
-     * @param location The location to which we need to move.
+     * Draw's the journey so far.
      */
-    private void moveToLocation(Location location) {
-        //Clear old marker.
-        if (currentMarker != null) {
-            currentMarker.remove();
+    private void drawJourney(ArrayList<LatLng> journey) {
+        //Clear map
+        mGoogleMap.clear();
+
+        //Return if no data.
+        if (journey.size() == 0) return;
+
+        //Describe polyline options, specifying points to connect.
+        PolylineOptions options = new PolylineOptions().width(5).color(Color.BLUE).geodesic(true);
+        for (int i = 0; i < journey.size(); i++) {
+            LatLng point = journey.get(i);
+            options.add(point);
         }
 
-        drawJourney(controller.getJourney());
+        //Draw the path.
+        mGoogleMap.addPolyline(options);
 
-        //Add new marker on current location.
-        LatLng defaultLocation = new LatLng(location.getLatitude(), location.getLongitude());
-        currentMarker = mGoogleMap.addMarker(new MarkerOptions()
-                .position(defaultLocation)
+
+        //Update markers
+        LatLng currentMarker = journey.get(journey.size() - 1);
+        mGoogleMap.addMarker(new MarkerOptions()
+                .position(currentMarker)
                 .title(getString(R.string.my_location)));
 
         //Animate the camera to new location.
@@ -310,27 +338,24 @@ public class MainActivity extends AppCompatActivity
         }
 
         CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(defaultLocation).zoom(zoom).build();
+                .target(currentMarker).zoom(zoom).build();
         mGoogleMap.animateCamera(CameraUpdateFactory
                 .newCameraPosition(cameraPosition));
-//        addPathToMap();
+
+        //Draw the initial point marker if possible
+        if (journey.size() > 1) {
+            //Journey has more than one pointers. So, we can add initial marker on first location.
+            mGoogleMap.addMarker(new MarkerOptions()
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                    .position(currentMarker)
+                    .title(getString(R.string.my_location)));
+        }
     }
 
     /**
-     * Draw's the journey so far.
+     * Open @{@link JourneyListActivity}.
      */
-    private void drawJourney(ArrayList<LatLng> journey) {
-        //Clear map
-        mGoogleMap.clear();
-
-        //Describe polyline options, specifying points to connect.
-        PolylineOptions options = new PolylineOptions().width(5).color(Color.BLUE).geodesic(true);
-        for (int i = 0; i < journey.size(); i++) {
-            LatLng point = journey.get(i);
-            options.add(point);
-        }
-
-        //Draw the path.
-        mGoogleMap.addPolyline(options);
+    private void openJourneyListActivity() {
+        startActivity(new Intent(this, JourneyListActivity.class));
     }
 }

@@ -1,8 +1,20 @@
 <resources>
+
     <string name="app_name">TakeHomeTest</string>
+
+    <!--Labels for MainActivity-->
     <string name="home">Home</string>
     <string name="my_location">My Location</string>
     <string name="label_toggle_tracking">Track location</string>
+
+    <!--Labels for notification when service gets foreground-->
     <string name="notification_title">TakeHomeTest</string>
     <string name="notification_message">Service running in background</string>
+
+    <!--Labels for Journey list screen-->
+    <string name="journey_list_title">List of Journeys</string>
+    <string name="title_journey_id">Journey ID</string>
+    <string name="title_start_time">Start Time</string>
+    <string name="title_end_time">End Time</string>
+    <string name="show_journeys">Show Journeys</string>
 </resources>
