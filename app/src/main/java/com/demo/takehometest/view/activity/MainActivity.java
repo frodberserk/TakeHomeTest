@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_show_journeys:
-                openJourneyListActivity();
+                controller.openJourneyListActivity();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -208,9 +208,13 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Called when map is ready to display.
+     *
+     * @param googleMap GoogleMap object.
+     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        //Called when map is ready to display.
         Log.d(TAG, "OnMapReady");
         mGoogleMap = googleMap;
     }
@@ -287,13 +291,6 @@ public class MainActivity extends AppCompatActivity
                     .position(initialLocation)
                     .title(getString(R.string.starting_point)));
         }
-    }
-
-    /**
-     * Open @{@link JourneyListActivity}.
-     */
-    private void openJourneyListActivity() {
-        startActivity(new Intent(this, JourneyListActivity.class));
     }
 
     @Override

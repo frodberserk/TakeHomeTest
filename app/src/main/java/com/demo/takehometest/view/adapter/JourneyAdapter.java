@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.demo.takehometest.R;
+import com.demo.takehometest.listener.JourneyItemClickListener;
 import com.demo.takehometest.model.Journey;
 
 import java.text.SimpleDateFormat;
@@ -33,6 +34,17 @@ public class JourneyAdapter extends RecyclerView.Adapter<JourneyAdapter.JourneyV
      */
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, hh:mm aa");
 
+    private JourneyItemClickListener mJourneyItemClickListener;
+
+    /**
+     * Constructor
+     *
+     * @param journeyItemClickListener Listener for item click events.
+     */
+    public JourneyAdapter(JourneyItemClickListener journeyItemClickListener) {
+        mJourneyItemClickListener = journeyItemClickListener;
+    }
+
     @Override
     public JourneyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         //Create and return ViewHolder
@@ -42,13 +54,22 @@ public class JourneyAdapter extends RecyclerView.Adapter<JourneyAdapter.JourneyV
     }
 
     @Override
-    public void onBindViewHolder(JourneyViewHolder holder, int position) {
+    public void onBindViewHolder(JourneyViewHolder holder, final int position) {
         //Set data on view for a particular row @position.
         Journey journey = mJourneyList.get(position);
         holder.tvId.setText(String.valueOf(journey.getId()));
 
         holder.tvStartTime.setText(niceTime(journey.getStartTime()));
         holder.tvEndTime.setText(niceTime(journey.getEndTime()));
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mJourneyItemClickListener != null) {
+                    mJourneyItemClickListener.onItemClicked(position, mJourneyList.get(position));
+                }
+            }
+        });
     }
 
     @Override

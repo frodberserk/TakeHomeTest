@@ -21,6 +21,7 @@ import com.demo.takehometest.service.LocationUpdatesService;
 import com.demo.takehometest.util.AppConstants;
 import com.demo.takehometest.util.AppMethods;
 import com.demo.takehometest.util.PreferencesUtil;
+import com.demo.takehometest.view.activity.JourneyListActivity;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.greenrobot.eventbus.EventBus;
@@ -250,10 +251,20 @@ public class MainActivityController implements RequestJourneyCallback {
         }
     }
 
+    /**
+     * Open settings where user can enable location.
+     */
     private void requestForEnableLocation() {
         Toast.makeText(context, R.string.enable_location_message, Toast.LENGTH_LONG).show();
         ((Activity) context).startActivityForResult(new Intent(
                         Settings.ACTION_LOCATION_SOURCE_SETTINGS),
                 AppConstants.REQUEST_CODE_LOCATION_SETTINGS_ENABLE);
+    }
+
+    /**
+     * Open @{@link JourneyListActivity}.
+     */
+    public void openJourneyListActivity() {
+        context.startActivity(new Intent(context, JourneyListActivity.class));
     }
 }

@@ -28,7 +28,12 @@
 
         <activity
             android:name=".view.activity.JourneyListActivity"
-            android:label="@string/journey_list_title" />
+            android:label="@string/journey_list_title"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".view.activity.DisplayJourneyActivity"
+            android:screenOrientation="portrait" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

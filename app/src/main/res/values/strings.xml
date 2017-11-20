@@ -21,4 +21,7 @@
     <string name="tracking_started">Tracking started</string>
     <string name="tracking_stopped">Tracking Stopped</string>
     <string name="enable_location_message">Please enable location</string>
+    <string name="journey_display_title">Journey %1d</string>
+    <string name="ending_point">Ending Point</string>
+    <string name="single_point_journey">Single Point Journey</string>
 </resources>

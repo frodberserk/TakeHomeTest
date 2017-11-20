@@ -52,7 +52,7 @@ public class JourneyListActivity extends AppCompatActivity {
         mController = new JourneyListController(this);
 
         //Initialize adapter
-        mJourneyAdapter = new JourneyAdapter();
+        mJourneyAdapter = new JourneyAdapter(mController);
 
         //Add layout manager to RecyclerView
         rvJourney.setLayoutManager(new LinearLayoutManager(this));
