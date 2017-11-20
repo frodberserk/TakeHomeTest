@@ -12,8 +12,9 @@ import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 
-import com.demo.takehometest.listener.RequestJourneyCallback;
+import com.demo.takehometest.R;
 import com.demo.takehometest.listener.MapUpdateViewCallback;
+import com.demo.takehometest.listener.RequestJourneyCallback;
 import com.demo.takehometest.model.LocationPoint;
 import com.demo.takehometest.model.MainActivityModel;
 import com.demo.takehometest.service.LocationUpdatesService;
@@ -153,6 +154,9 @@ public class MainActivityController implements RequestJourneyCallback {
         if (!status) {
             mLocationUpdatesService.removeLocationUpdates();
             model.clearJourney();
+            if (mUpdateViewCallback != null) {
+                mUpdateViewCallback.displayAlert(context.getString(R.string.tracking_stopped));
+            }
         }
     }
 
@@ -195,6 +199,9 @@ public class MainActivityController implements RequestJourneyCallback {
     public void requestLocationUpdates() {
         setTrackingStatus(true);
         mLocationUpdatesService.requestLocationUpdates();
+        if (mUpdateViewCallback != null) {
+            mUpdateViewCallback.displayAlert(context.getString(R.string.tracking_started));
+        }
     }
 
     /**

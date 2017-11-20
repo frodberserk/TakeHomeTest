@@ -5,6 +5,7 @@
     <!--Labels for MainActivity-->
     <string name="home">Home</string>
     <string name="my_location">My Location</string>
+    <string name="starting_point">Starting point</string>
     <string name="label_toggle_tracking">Track location</string>
 
     <!--Labels for notification when service gets foreground-->
@@ -17,4 +18,6 @@
     <string name="title_start_time">Start Time</string>
     <string name="title_end_time">End Time</string>
     <string name="show_journeys">Show Journeys</string>
+    <string name="tracking_started">Tracking started</string>
+    <string name="tracking_stopped">Tracking Stopped</string>
 </resources>

@@ -16,4 +16,11 @@ public interface MapUpdateViewCallback {
      * @param data List of journey points.
      */
     void updateView(ArrayList<LatLng> data);
+
+    /**
+     * Called when controller need to display an alert in screen.
+     *
+     * @param message Message to display.
+     */
+    void displayAlert(String message);
 }

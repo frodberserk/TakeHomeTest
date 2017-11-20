@@ -214,7 +214,6 @@ public class LocationUpdatesService extends Service {
         try {
             mFusedLocationClient.requestLocationUpdates(mLocationRequest,
                     mLocationCallback, Looper.myLooper());
-            startJourney();
             updatesOn = true;
         } catch (SecurityException exception) {
             mPreferencesUtil.setTracking(false);
@@ -325,21 +324,6 @@ public class LocationUpdatesService extends Service {
     }
 
     /**
-     * Saves new journey into database.
-     */
-    private void startJourney() {
-        //Background thread for Room database
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                currentJourney = new Journey();
-                currentJourney.setStartTime(System.currentTimeMillis());
-                currentJourney.setId(journeyDatabase.dao().addJourney(currentJourney));
-            }
-        }).start();
-    }
-
-    /**
      * Update end time of journey into database.
      */
     private void endJourney() {
@@ -358,22 +342,27 @@ public class LocationUpdatesService extends Service {
     }
 
     private void addLocationToDatabase(final Location location) {
-        //Check if journey not null
-        if (currentJourney != null) {
-            //Background thread for Room database
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    LocationPoint locationPoint = new LocationPoint();
-
-                    locationPoint.setJourneyId(currentJourney.getId());
-                    locationPoint.setLatitude(location.getLatitude());
-                    locationPoint.setLongitude(location.getLongitude());
-
-                    journeyDatabase.dao().addLocationPoint(locationPoint);
+        //Background thread for Room database
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                //If starting point of journey, create a @Journey object and save to database.
+                if (currentJourney == null) {
+                    currentJourney = new Journey();
+                    currentJourney.setStartTime(System.currentTimeMillis());
+                    currentJourney.setId(journeyDatabase.dao().addJourney(currentJourney));
                 }
-            }).start();
-        }
+
+                //Save location in database corresponding to id of current journey.
+                LocationPoint locationPoint = new LocationPoint();
+
+                locationPoint.setJourneyId(currentJourney.getId());
+                locationPoint.setLatitude(location.getLatitude());
+                locationPoint.setLongitude(location.getLongitude());
+
+                journeyDatabase.dao().addLocationPoint(locationPoint);
+            }
+        }).start();
     }
 
     /**

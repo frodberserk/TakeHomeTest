@@ -4,11 +4,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 
@@ -38,7 +40,7 @@ import butterknife.Unbinder;
  * This activity is used to display map and user's location on it.
  */
 public class MainActivity extends AppCompatActivity
-        implements OnMapReadyCallback, MapUpdateViewCallback {
+        implements OnMapReadyCallback, MapUpdateViewCallback, CompoundButton.OnCheckedChangeListener {
 
     /**
      * Simple tag for map logs.
@@ -70,6 +72,8 @@ public class MainActivity extends AppCompatActivity
      */
     @BindView(R.id.sw_tracking)
     Switch swTracking;
+    @BindView(R.id.parent)
+    View parentView;
 
     /**
      * Butter knife view binder.
@@ -105,7 +109,7 @@ public class MainActivity extends AppCompatActivity
         getFragmentManager().beginTransaction().add(R.id.container, mMapFragment, "mapFragment").commit();
         mMapFragment.getMapAsync(this);
 
-        addSwitchListener();
+        swTracking.setOnCheckedChangeListener(this);
     }
 
     @Override
@@ -126,21 +130,8 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void addSwitchListener() {
-        swTracking.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if (b) {
-                    controller.requestForTracking();
-                } else {
-                    stopTracking();
-                }
-            }
-        });
-    }
-
     /**
-     * Stops the tracking by turning off updates from service.
+     * Stops the tracking.
      */
     private void stopTracking() {
         controller.setTrackingStatus(false);
@@ -193,9 +184,12 @@ public class MainActivity extends AppCompatActivity
                     swTracking.setChecked(true);
                     controller.requestLocationUpdates();
                 } else {
-                    //If tracking was enabled but permission wasn't granted, turn off tracking.
+                    //If tracking was enabled but permission wasn't granted, turn off switch.
+                    //Disabled listener before toggling it off so that the manual toggle won't
+                    //trigger listener.
+                    swTracking.setOnCheckedChangeListener(null);
                     swTracking.setChecked(false);
-                    controller.setTrackingStatus(false);
+                    swTracking.setOnCheckedChangeListener(this);
                 }
             }
         }
@@ -217,6 +211,11 @@ public class MainActivity extends AppCompatActivity
     public void updateView(ArrayList<LatLng> data) {
         //Display user's current location on map.
         drawJourney(data);
+    }
+
+    @Override
+    public void displayAlert(String message) {
+        Snackbar.make(parentView, message, Snackbar.LENGTH_SHORT).show();
     }
 
     /**
@@ -268,10 +267,12 @@ public class MainActivity extends AppCompatActivity
         //Draw the initial point marker if possible
         if (journey.size() > 1) {
             //Journey has more than one pointers. So, we can add initial marker on first location.
+            LatLng initialLocation = new LatLng(journey.get(0).latitude, journey.get(0).longitude);
+
             mGoogleMap.addMarker(new MarkerOptions()
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                    .position(currentMarker)
-                    .title(getString(R.string.my_location)));
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
+                    .position(initialLocation)
+                    .title(getString(R.string.starting_point)));
         }
     }
 
@@ -280,5 +281,16 @@ public class MainActivity extends AppCompatActivity
      */
     private void openJourneyListActivity() {
         startActivity(new Intent(this, JourneyListActivity.class));
+    }
+
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+        if (b) {
+            //Tracking switch was turned on.
+            controller.requestForTracking();
+        } else {
+//            Tracking switch was turned off
+            stopTracking();
+        }
     }
 }
