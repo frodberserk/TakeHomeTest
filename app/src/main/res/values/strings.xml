@@ -20,4 +20,5 @@
     <string name="show_journeys">Show Journeys</string>
     <string name="tracking_started">Tracking started</string>
     <string name="tracking_stopped">Tracking Stopped</string>
+    <string name="enable_location_message">Please enable location</string>
 </resources>

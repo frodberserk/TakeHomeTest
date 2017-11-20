@@ -6,11 +6,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import android.widget.Toast;
 
 import com.demo.takehometest.R;
 import com.demo.takehometest.listener.MapUpdateViewCallback;
@@ -19,6 +19,7 @@ import com.demo.takehometest.model.LocationPoint;
 import com.demo.takehometest.model.MainActivityModel;
 import com.demo.takehometest.service.LocationUpdatesService;
 import com.demo.takehometest.util.AppConstants;
+import com.demo.takehometest.util.AppMethods;
 import com.demo.takehometest.util.PreferencesUtil;
 import com.google.android.gms.maps.model.LatLng;
 
@@ -78,15 +79,7 @@ public class MainActivityController implements RequestJourneyCallback {
                     syncCurrentJourneyData();
                     return;
                 }
-
-                //Check if location permission is granted.
-                if (isLocationPermissionGranted()) {
-                    //Permission is granted, start location service.
-                    requestLocationUpdates();
-                } else {
-                    //Permission is not granted so requesting for it.
-                    requestForLocationPermission();
-                }
+                requestLocationUpdates();
             }
         }
 
@@ -196,35 +189,28 @@ public class MainActivityController implements RequestJourneyCallback {
         }
     }
 
-    public void requestLocationUpdates() {
-        setTrackingStatus(true);
-        mLocationUpdatesService.requestLocationUpdates();
-        if (mUpdateViewCallback != null) {
-            mUpdateViewCallback.displayAlert(context.getString(R.string.tracking_started));
-        }
-    }
 
     /**
-     * Check if location permission is granted.
-     *
-     * @return True if granted, false otherwise.
-     */
-    private boolean isLocationPermissionGranted() {
-        return ContextCompat.checkSelfPermission(context,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED;
-    }
-
-    /**
-     * Request controller for tracking user location. If location permission is not granted, the
-     * controller will request for permission.
+     * Request controller for tracking user location. If location permission is not granted or
+     * looation is disabled for app, the controller will request for them.
      * <p>
      * If user doesn't allow permission to track location, tracking won't start.
      */
-    public void requestForTracking() {
-        if (isLocationPermissionGranted()) {
-            //Start location updates
-            requestLocationUpdates();
+    public void requestLocationUpdates() {
+        if (AppMethods.isLocationPermissionGranted(context)) {
+            //Location permission is granted. Check if location is enabled in phone settings.
+            if (AppMethods.isLocationEnabled(context)) {
+                //Start location updates
+                //Permission is granted, start location service.
+                setTrackingStatus(true);
+                mLocationUpdatesService.requestLocationUpdates();
+                if (mUpdateViewCallback != null) {
+                    mUpdateViewCallback.displayAlert(context.getString(R.string.tracking_started));
+                }
+            } else {
+                //Request for enable location in settings
+                requestForEnableLocation();
+            }
         } else {
             //Request for location permission
             requestForLocationPermission();
@@ -262,5 +248,12 @@ public class MainActivityController implements RequestJourneyCallback {
         if (mUpdateViewCallback != null) {
             mUpdateViewCallback.updateView(getJourney());
         }
+    }
+
+    private void requestForEnableLocation() {
+        Toast.makeText(context, R.string.enable_location_message, Toast.LENGTH_LONG).show();
+        ((Activity) context).startActivityForResult(new Intent(
+                        Settings.ACTION_LOCATION_SOURCE_SETTINGS),
+                AppConstants.REQUEST_CODE_LOCATION_SETTINGS_ENABLE);
     }
 }

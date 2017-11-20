@@ -7,7 +7,8 @@ package com.demo.takehometest.util;
 public class AppConstants {
 
     /**
-     * Permission request codes.
+     * Request codes.
      */
     public static final int REQUEST_CODE_LOCATION_PERMISSION = 1;
+    public static final int REQUEST_CODE_LOCATION_SETTINGS_ENABLE = 2;
 }

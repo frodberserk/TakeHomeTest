@@ -18,6 +18,7 @@ import com.demo.takehometest.R;
 import com.demo.takehometest.controller.MainActivityController;
 import com.demo.takehometest.listener.MapUpdateViewCallback;
 import com.demo.takehometest.util.AppConstants;
+import com.demo.takehometest.util.AppMethods;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -180,18 +181,30 @@ public class MainActivity extends AppCompatActivity
             case AppConstants.REQUEST_CODE_LOCATION_PERMISSION: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission granted. Update tracking UI, and start updates.
-                    swTracking.setChecked(true);
+                    // Permission granted. Request updates.
                     controller.requestLocationUpdates();
                 } else {
                     //If tracking was enabled but permission wasn't granted, turn off switch.
-                    //Disabled listener before toggling it off so that the manual toggle won't
-                    //trigger listener.
-                    swTracking.setOnCheckedChangeListener(null);
-                    swTracking.setChecked(false);
-                    swTracking.setOnCheckedChangeListener(this);
+                    turnOffSwitchManually();
                 }
             }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case AppConstants.REQUEST_CODE_LOCATION_SETTINGS_ENABLE:
+                //Settings won't return data, so check manually if location enabled or not.
+                if (AppMethods.isLocationEnabled(this)) {
+                    // Location enabled. Request updates.
+                    controller.requestLocationUpdates();
+                } else {
+                    //If tracking was enabled but location wasn't enabled, turn off switch.
+                    turnOffSwitchManually();
+                }
+                break;
         }
     }
 
@@ -287,10 +300,21 @@ public class MainActivity extends AppCompatActivity
     public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
         if (b) {
             //Tracking switch was turned on.
-            controller.requestForTracking();
+            controller.requestLocationUpdates();
         } else {
 //            Tracking switch was turned off
             stopTracking();
         }
+    }
+
+    /**
+     * Turn off tracking switch manually.
+     */
+    private void turnOffSwitchManually() {
+        //Disabled listener before toggling it off so that the manual toggle won't
+        //trigger listener.
+        swTracking.setOnCheckedChangeListener(null);
+        swTracking.setChecked(false);
+        swTracking.setOnCheckedChangeListener(this);
     }
 }
