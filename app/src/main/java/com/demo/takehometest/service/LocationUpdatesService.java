@@ -399,7 +399,9 @@ public class LocationUpdatesService extends Service {
         }
 
         protected void onPostExecute(List<LocationPoint> result) {
-            callback.onRequestComplete(result);
+            if (callback != null) {
+                callback.onRequestComplete(result);
+            }
         }
     }
 }

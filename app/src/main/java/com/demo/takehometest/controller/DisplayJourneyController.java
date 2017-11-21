@@ -60,7 +60,9 @@ public class DisplayJourneyController {
         }
 
         protected void onPostExecute(List<LocationPoint> result) {
-            callback.onQuerySuccessful(result);
+            if (callback != null) {
+                callback.onQuerySuccessful(result);
+            }
         }
     }
 }

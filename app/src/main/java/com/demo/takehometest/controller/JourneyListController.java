@@ -76,7 +76,9 @@ public class JourneyListController implements JourneyItemClickListener {
 
         protected void onPostExecute(List<Journey> result) {
             //Return data in callback
-            callback.onQuerySuccessful(result);
+            if (callback != null) {
+                callback.onQuerySuccessful(result);
+            }
         }
     }
 }
