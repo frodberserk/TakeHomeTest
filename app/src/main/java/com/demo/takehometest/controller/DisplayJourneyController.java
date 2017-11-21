@@ -4,11 +4,9 @@ import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.os.AsyncTask;
 
-import com.commonsware.cwac.saferoom.SafeHelperFactory;
 import com.demo.takehometest.database.JourneyDatabase;
 import com.demo.takehometest.listener.JourneyPathQueryCallback;
 import com.demo.takehometest.model.LocationPoint;
-import com.demo.takehometest.util.PreferencesUtil;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.ArrayList;
@@ -34,8 +32,8 @@ public class DisplayJourneyController {
         //Build database object.
         database = Room.databaseBuilder(context, JourneyDatabase.class,
                 JourneyDatabase.DATABASE_NAME)
-                .openHelperFactory(new SafeHelperFactory(
-                        new PreferencesUtil(context).getKeySafeRoom()))
+//                .openHelperFactory(new SafeHelperFactory(
+//                        new PreferencesUtil(context).getKeySafeRoom()))
                 .build();
     }
 

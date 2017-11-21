@@ -17,8 +17,8 @@ public class AppConstants {
      */
     public static final int MAP_PADDING = 100;
 
-    /**
-     * Length of key
-     */
-    public static final int KEY_LENGTH = 20;
+//    /**
+//     * Length of key
+//     */
+//    public static final int KEY_LENGTH = 20;
 }

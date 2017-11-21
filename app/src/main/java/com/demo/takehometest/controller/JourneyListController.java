@@ -5,12 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 
-import com.commonsware.cwac.saferoom.SafeHelperFactory;
 import com.demo.takehometest.database.JourneyDatabase;
 import com.demo.takehometest.listener.JourneyItemClickListener;
 import com.demo.takehometest.listener.JourneyQueryCallback;
 import com.demo.takehometest.model.Journey;
-import com.demo.takehometest.util.PreferencesUtil;
 import com.demo.takehometest.view.activity.DisplayJourneyActivity;
 
 import java.util.List;
@@ -36,8 +34,8 @@ public class JourneyListController implements JourneyItemClickListener {
         //Build database object.
         database = Room.databaseBuilder(context, JourneyDatabase.class,
                 JourneyDatabase.DATABASE_NAME)
-                .openHelperFactory(new SafeHelperFactory(
-                        new PreferencesUtil(context).getKeySafeRoom()))
+//                .openHelperFactory(new SafeHelperFactory(
+//                        new PreferencesUtil(context).getKeySafeRoom()))
                 .build();
     }
 
