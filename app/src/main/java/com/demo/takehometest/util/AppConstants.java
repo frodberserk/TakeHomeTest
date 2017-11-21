@@ -11,4 +11,9 @@ public class AppConstants {
      */
     public static final int REQUEST_CODE_LOCATION_PERMISSION = 1;
     public static final int REQUEST_CODE_LOCATION_SETTINGS_ENABLE = 2;
+
+    /**
+     * Map padding in pixels while zooming on a journey
+     */
+    public static final int MAP_PADDING = 100;
 }

@@ -8,15 +8,13 @@ import android.util.Log;
 import com.demo.takehometest.R;
 import com.demo.takehometest.controller.DisplayJourneyController;
 import com.demo.takehometest.listener.JourneyPathQueryCallback;
-import com.demo.takehometest.model.LocationPoint;
-import com.google.android.gms.maps.CameraUpdateFactory;
+import com.demo.takehometest.util.AppConstants;
+import com.demo.takehometest.util.AppMethods;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -49,10 +47,6 @@ public class DisplayJourneyActivity extends AppCompatActivity
      */
     private static final int POLYLINE_COLOR = Color.BLUE;
 
-    /**
-     * Initial zoom to map.
-     */
-    private static final float INITIAL_ZOOM = 17.0f;
 
     /**
      * Google map elements.
@@ -104,7 +98,7 @@ public class DisplayJourneyActivity extends AppCompatActivity
      * @param points List containing journey points.
      */
     @Override
-    public void onQuerySuccessful(List<LocationPoint> points) {
+    public void onQuerySuccessful(List<LatLng> points) {
         //Clear map
         mGoogleMap.clear();
 
@@ -113,52 +107,31 @@ public class DisplayJourneyActivity extends AppCompatActivity
             return;
         }
 
-        //Camera focus point
-        LatLng cameraFocusPoint;
-
         //Single point journey
         if (points.size() == 1) {
-            //Just draw single marker. Camera focus point will be the marker itself.
-            cameraFocusPoint = new LatLng(points.get(0).getLatitude(),
-                    points.get(0).getLongitude());
+            //Just draw single marker
             mGoogleMap.addMarker(new MarkerOptions()
-                    .position(cameraFocusPoint)
+                    .position(points.get(0))
                     .title(getString(R.string.single_point_journey)));
         } else {
             //Display journey path here
             PolylineOptions options = new PolylineOptions().width(POLYLINE_WIDTH)
                     .color(POLYLINE_COLOR)
                     .geodesic(true);
-            for (int i = 0; i < points.size(); i++) {
-                LatLng point = new LatLng(points.get(i).getLatitude(),
-                        points.get(i).getLongitude());
-                options.add(point);
-            }
+            options.addAll(points);
             mGoogleMap.addPolyline(options);
-
-            //Define start and end points
-            LatLng startPoint = new LatLng(points.get(0).getLatitude(),
-                    points.get(0).getLongitude());
-            LatLng endPoint = new LatLng(points.get(points.size() - 1).getLatitude(),
-                    points.get(points.size() - 1).getLongitude());
-
-            //Define camera focus point as mid point between start and end
-            cameraFocusPoint = new LatLngBounds(startPoint, endPoint).getCenter();
 
             //Add markers for start and end
             mGoogleMap.addMarker(new MarkerOptions()
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
-                    .position(startPoint)
+                    .position(points.get(0))
                     .title(getString(R.string.starting_point)));
             mGoogleMap.addMarker(new MarkerOptions()
-                    .position(endPoint)
+                    .position(points.get(points.size() - 1))
                     .title(getString(R.string.ending_point)));
         }
 
-        //Animate camera to center point of journey
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(cameraFocusPoint).zoom(INITIAL_ZOOM).build();
-        mGoogleMap.animateCamera(CameraUpdateFactory
-                .newCameraPosition(cameraPosition));
+        //Animate camera to journey
+        AppMethods.zoomRoute(mGoogleMap, points, AppConstants.MAP_PADDING);
     }
 }

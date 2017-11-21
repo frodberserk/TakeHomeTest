@@ -1,6 +1,6 @@
 package com.demo.takehometest.listener;
 
-import com.demo.takehometest.model.LocationPoint;
+import com.google.android.gms.maps.model.LatLng;
 
 import java.util.List;
 
@@ -15,5 +15,5 @@ public interface JourneyPathQueryCallback {
      *
      * @param points List containing journey points.
      */
-    void onQuerySuccessful(List<LocationPoint> points);
+    void onQuerySuccessful(List<LatLng> points);
 }
