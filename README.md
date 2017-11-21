@@ -1,18 +1,18 @@
 Screenshots
 -----------
 
-![Screenshot 1](screenshots/Screenshot_1.png)
+<img src="screenshots/Screenshot_1.png" style=" width:450px ; height:800px " />
 
-![Screenshot 2](screenshots/Screenshot_2.png)
+<img src="screenshots/Screenshot_2.png" style=" width:450px ; height:800px " />
 
-![Screenshot 3](screenshots/Screenshot_3.png)
+<img src="screenshots/Screenshot_3.png" style=" width:450px ; height:800px " />
 
-![Screenshot 4](screenshots/Screenshot_4.png)
+<img src="screenshots/Screenshot_4.png" style=" width:450px ; height:800px " />
 
-![Screenshot 5](screenshots/Screenshot_5.png)
+<img src="screenshots/Screenshot_5.png" style=" width:450px ; height:800px " />
 
-![Screenshot 6](screenshots/Screenshot_6.png)
+<img src="screenshots/Screenshot_6.png" style=" width:450px ; height:800px " />
 
-![Screenshot 7](screenshots/Screenshot_7.png)
+<img src="screenshots/Screenshot_7.png" style=" width:450px ; height:800px " />
 
-![Screenshot 8](screenshots/Screenshot_8.png)
+<img src="screenshots/Screenshot_8.png" style=" width:450px ; height:800px " />
