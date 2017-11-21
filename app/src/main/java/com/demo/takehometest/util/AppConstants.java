@@ -16,4 +16,9 @@ public class AppConstants {
      * Map padding in pixels while zooming on a journey
      */
     public static final int MAP_PADDING = 100;
+
+    /**
+     * Length of key
+     */
+    public static final int KEY_LENGTH = 20;
 }

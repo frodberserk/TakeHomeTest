@@ -34,6 +34,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.commonsware.cwac.saferoom.SafeHelperFactory;
 import com.demo.takehometest.R;
 import com.demo.takehometest.database.JourneyDatabase;
 import com.demo.takehometest.listener.RequestJourneyCallback;
@@ -136,6 +137,7 @@ public class LocationUpdatesService extends Service {
         //Build the database object.
         journeyDatabase = Room.databaseBuilder(getApplicationContext(), JourneyDatabase.class,
                 JourneyDatabase.DATABASE_NAME)
+                .openHelperFactory(new SafeHelperFactory(mPreferencesUtil.getKeySafeRoom()))
                 .build();
 
         //Initialize location client.
